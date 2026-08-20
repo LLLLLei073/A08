@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && VITE_STATIC_HOST=vercel pnpm --filter @ai-party-school/mobile build",
+  "buildCommand": "cd ../.. && pnpm --filter @ai-party-school/shared build && VITE_STATIC_HOST=vercel pnpm --filter @ai-party-school/mobile build",
   "outputDirectory": "dist",
   "rewrites": [
     {
