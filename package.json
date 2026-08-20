@@ -1,0 +1,38 @@
+{
+  "name": "ai-party-school",
+  "version": "1.0.0",
+  "private": true,
+  "description": "基于 AI 的数智党校学习系统 - A08 赛题",
+  "scripts": {
+    "dev": "concurrently -n server,admin,mobile -c blue,green,magenta \"cd packages/server && npx nest start --watch\" \"cd packages/admin && npx vite\" \"cd packages/mobile && npx vite\"",
+    "dev:server": "cd packages/server && npx nest start --watch",
+    "dev:admin": "cd packages/admin && npx vite",
+    "dev:mobile": "cd packages/mobile && npx vite",
+    "start": "pnpm --filter server start",
+    "db:init": "pnpm --filter server prisma:dbpush && pnpm --filter server prisma:seed",
+    "db:seed:adaptive": "pnpm --filter @ai-party-school/server prisma:seed:adaptive",
+    "build": "pnpm --filter shared build && pnpm --filter server build && pnpm --filter admin build && pnpm --filter mobile build",
+    "package:server:linux": "pnpm --filter shared build && pnpm --filter server prisma:generate && pnpm --filter server build && pnpm --filter admin build && pnpm --filter mobile build && node scripts/precompress.cjs && node scripts/package-server-release.cjs",
+    "lint": "eslint \"packages/**/*.{ts,vue}\"",
+    "lint:fix": "eslint \"packages/**/*.{ts,vue}\" --fix",
+    "format": "prettier --write \"packages/**/*.{ts,vue,json,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.1.0",
+    "eslint": "^10.8.1",
+    "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.11.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@11.15.0"
+}

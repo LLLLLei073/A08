@@ -1,0 +1,36 @@
+[Unit]
+Description=AI Party School Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=party-school
+Group=party-school
+WorkingDirectory=/opt/ai-party-school/current/packages/server
+EnvironmentFile=/etc/ai-party-school/server.env
+ExecStart=/opt/ai-party-school/runtime/node/bin/node dist/main.js
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+KillSignal=SIGINT
+LimitNOFILE=65535
+MemoryMax=1G
+
+StateDirectory=ai-party-school
+StateDirectoryMode=0750
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectKernelLogs=true
+LockPersonality=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/ai-party-school
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,183 @@
+/* ============================================================
+   数智党校 · 移动端设计令牌
+   庄重典雅的数智红 — Dignified Digital Red
+   ============================================================ */
+:root {
+  /* 党红 */
+  --ps-red: #8b1a1a;
+  --ps-red-deep: #5e0f0f;
+  --ps-red-bright: #b22222;
+  --ps-red-soft: #fbf0ee;
+  --ps-red-border: #f0d9d4;
+
+  /* 金 */
+  --ps-gold: #c9a961;
+  --ps-gold-deep: #a8893e;
+  --ps-gold-light: #efe4c8;
+
+  /* 墨与纸 */
+  --ps-ink: #1c1917;
+  --ps-ink-soft: #44403c;
+  --ps-muted: #8a8276;
+  --ps-bg: #faf6ef;
+  --ps-surface: #ffffff;
+  --ps-line: #ece4d6;
+  --ps-line-soft: #f4eee2;
+
+  /* 字体：系统字体优先（不再依赖外部 web 字体，首屏无阻塞、中文渲染更快更稳） */
+  --ps-font-serif: 'Songti SC', 'STSong', 'Noto Serif SC', serif;
+  --ps-font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+
+  /* 阴影 */
+  --ps-shadow-sm: 0 1px 2px rgba(94, 15, 15, 0.04), 0 1px 3px rgba(94, 15, 15, 0.05);
+  --ps-shadow-md: 0 6px 18px rgba(94, 15, 15, 0.07), 0 2px 6px rgba(94, 15, 15, 0.04);
+
+  /* Vant 主题变量 */
+  --van-primary-color: var(--ps-red);
+  --van-text-color: var(--ps-ink);
+  --van-text-color-2: var(--ps-muted);
+  --van-border-color: var(--ps-line);
+  --van-background: var(--ps-bg);
+  --van-background-2: var(--ps-surface);
+  --van-cell-background: var(--ps-surface);
+  --van-nav-bar-icon-color: var(--ps-ink);
+  --van-nav-bar-title-text-color: var(--ps-ink);
+  --van-tab-active-text-color: var(--ps-red);
+  --van-tabs-bottom-bar-color: var(--ps-red);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--ps-bg);
+  font-family: var(--ps-font-sans);
+  color: var(--ps-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'palt';
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 88% 4%, rgba(201, 169, 97, 0.08) 0%, transparent 30%),
+    radial-gradient(circle at 8% 96%, rgba(139, 26, 26, 0.05) 0%, transparent 32%);
+  background-attachment: fixed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+::selection {
+  background: rgba(201, 169, 97, 0.28);
+  color: var(--ps-red-deep);
+}
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 60px;
+  animation: ps-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.card {
+  background: var(--ps-surface);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 12px;
+  box-shadow: var(--ps-shadow-sm);
+}
+
+.section-title {
+  font-family: var(--ps-font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 18px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ps-ink);
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 15px;
+  background: linear-gradient(180deg, var(--ps-red), var(--ps-gold));
+  border-radius: 2px;
+}
+
+@keyframes ps-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Vant 组件微调 */
+.van-nav-bar {
+  background: transparent !important;
+}
+.van-nav-bar .van-icon {
+  font-size: 20px;
+}
+/* 红色按钮（主 / 危险）：文字统一白色，字号随按钮尺寸自适应。
+   plain 变体是“红色文字、浅色底”，不属于红底按钮，故排除。 */
+.van-button--primary:not(.van-button--plain),
+.van-button--danger:not(.van-button--plain) {
+  color: #fff !important;
+  font-weight: 500;
+}
+.van-button--primary {
+  background: linear-gradient(135deg, var(--ps-red-bright), var(--ps-red)) !important;
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(139, 26, 26, 0.24);
+  letter-spacing: 2px;
+}
+/* 字号与按钮尺寸匹配：大 16px / 默认 14px / 小 12px / 迷你 10px */
+.van-button--large.van-button--primary:not(.van-button--plain),
+.van-button--large.van-button--danger:not(.van-button--plain) {
+  font-size: 16px;
+}
+.van-button--normal.van-button--primary:not(.van-button--plain),
+.van-button--normal.van-button--danger:not(.van-button--plain) {
+  font-size: 14px;
+}
+.van-button--small.van-button--primary:not(.van-button--plain),
+.van-button--small.van-button--danger:not(.van-button--plain) {
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.van-button--mini.van-button--primary:not(.van-button--plain),
+.van-button--mini.van-button--danger:not(.van-button--plain) {
+  font-size: 10px;
+}
+.van-tabbar {
+  box-shadow: 0 -2px 16px rgba(94, 15, 15, 0.06) !important;
+  border-top: 1px solid var(--ps-line-soft) !important;
+}
+.van-tabbar-item--active {
+  color: var(--ps-red) !important;
+}
+.van-cell {
+  font-size: 14px;
+}
+.van-tabs__nav {
+  background: transparent !important;
+}

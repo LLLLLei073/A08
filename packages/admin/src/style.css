@@ -1,0 +1,319 @@
+/* ============================================================
+   数智党校 · 设计令牌 (Design Tokens)
+   庄重典雅的数智红 — Dignified Digital Red
+   ============================================================ */
+:root {
+  /* 党红 — 深沉庄重 */
+  --ps-red: #8b1a1a;
+  --ps-red-deep: #5e0f0f;
+  --ps-red-bright: #b22222;
+  --ps-red-soft: #fbf0ee;
+  --ps-red-border: #f0d9d4;
+
+  /* 金 — 权威点缀 */
+  --ps-gold: #c9a961;
+  --ps-gold-deep: #a8893e;
+  --ps-gold-light: #efe4c8;
+
+  /* 墨与纸 — 温润中性 */
+  --ps-ink: #1c1917;
+  --ps-ink-soft: #44403c;
+  --ps-muted: #8a8276;
+  --ps-bg: #faf6ef;
+  --ps-surface: #ffffff;
+  --ps-line: #ece4d6;
+  --ps-line-soft: #f4eee2;
+
+  /* 字体（本地系统字体，避免外部 CDN 加载失败） */
+  --ps-font-serif: 'Songti SC', 'STSong', 'SimSun', serif;
+  --ps-font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+  --ps-font-num: 'Songti SC', 'STSong', Georgia, serif;
+
+  /* 阴影 */
+  --ps-shadow-sm: 0 1px 2px rgba(94, 15, 15, 0.04), 0 1px 3px rgba(94, 15, 15, 0.06);
+  --ps-shadow-md: 0 4px 16px rgba(94, 15, 15, 0.06), 0 2px 6px rgba(94, 15, 15, 0.04);
+  --ps-shadow-lg: 0 16px 48px rgba(94, 15, 15, 0.1), 0 4px 12px rgba(94, 15, 15, 0.06);
+  --ps-shadow-red: 0 12px 36px rgba(139, 26, 26, 0.22);
+
+  /* 圆角 */
+  --ps-radius-sm: 6px;
+  --ps-radius: 10px;
+  --ps-radius-lg: 16px;
+}
+
+/* ============================================================
+   基础重置
+   ============================================================ */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--ps-font-sans);
+  color: var(--ps-ink);
+  background-color: var(--ps-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'palt';
+}
+
+/* 纸纹底色 — 温润氛围而非死灰 */
+body {
+  background-color: var(--ps-bg);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(201, 169, 97, 0.06) 0%, transparent 32%),
+    radial-gradient(circle at 88% 92%, rgba(139, 26, 26, 0.05) 0%, transparent 36%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 26, 26, 0.18);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 26, 26, 0.32);
+}
+
+/* 选区 */
+::selection {
+  background: rgba(201, 169, 97, 0.28);
+  color: var(--ps-red-deep);
+}
+
+/* ============================================================
+   通用排版
+   ============================================================ */
+.ps-serif {
+  font-family: var(--ps-font-serif);
+}
+.ps-num {
+  font-family: var(--ps-font-num);
+  font-feature-settings: 'lnum';
+}
+
+.page-container {
+  padding: 24px 28px;
+  /* 不保留动画末帧的 transform，避免页面成为永久堆叠上下文并压住浮层。 */
+  animation: ps-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+.mt-16 {
+  margin-top: 16px;
+}
+.flex {
+  display: flex;
+}
+.flex-1 {
+  flex: 1;
+}
+.gap-12 {
+  gap: 12px;
+}
+
+/* 区块小标题 — 金色竖线 */
+.ps-section-title {
+  font-family: var(--ps-font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ps-ink);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ps-section-title::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: linear-gradient(180deg, var(--ps-red), var(--ps-gold));
+  border-radius: 2px;
+}
+
+/* ============================================================
+   动效
+   ============================================================ */
+@keyframes ps-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ps-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Element Plus 主题微调 — 让组件融入党红金调
+   ============================================================ */
+:root {
+  --el-color-primary: #8b1a1a;
+  --el-color-primary-light-3: #a84040;
+  --el-color-primary-light-5: #c47878;
+  --el-color-primary-light-7: #ddb0b0;
+  --el-color-primary-light-8: #e9c9c9;
+  --el-color-primary-light-9: var(--ps-red-soft);
+  --el-color-primary-dark-2: #6e1414;
+  --el-border-radius-base: 8px;
+  --el-box-shadow: var(--ps-shadow-md);
+  --el-box-shadow-light: var(--ps-shadow-sm);
+  --el-text-color-primary: var(--ps-ink);
+  --el-text-color-regular: var(--ps-ink-soft);
+  --el-text-color-secondary: var(--ps-muted);
+  --el-border-color: var(--ps-line);
+  --el-border-color-light: var(--ps-line-soft);
+  --el-fill-color-blank: var(--ps-surface);
+  --el-bg-color: var(--ps-surface);
+  --el-bg-color-page: var(--ps-bg);
+}
+
+/* 卡片：温润白底 + 暖阴影 + 极细金边 */
+.el-card {
+  border: 1px solid var(--ps-line-soft) !important;
+  border-radius: var(--ps-radius-lg) !important;
+  box-shadow: var(--ps-shadow-sm) !important;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+  overflow: hidden;
+}
+.el-card:hover {
+  box-shadow: var(--ps-shadow-md) !important;
+}
+.el-card__header {
+  border-bottom: 1px solid var(--ps-line-soft) !important;
+  padding: 16px 20px !important;
+  font-family: var(--ps-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--ps-ink);
+}
+.el-card__body {
+  padding: 20px !important;
+}
+
+/* 主按钮：党红渐变 */
+.el-button--primary {
+  background: linear-gradient(135deg, var(--ps-red-bright), var(--ps-red)) !important;
+  border: none !important;
+  box-shadow: 0 6px 16px rgba(139, 26, 26, 0.24) !important;
+  font-weight: 500;
+  letter-spacing: 1px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.2s ease !important;
+}
+.el-button--primary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(139, 26, 26, 0.3) !important;
+}
+.el-button--primary:active {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   红色按钮统一规范：红底白字
+   所有红底按钮（主按钮 / 危险按钮，含 link / text 变体，
+   以及今后新增的红底按钮）一律红底 + 白色文字，
+   字号随按钮尺寸自适应：大 16px / 默认 14px / 小 12px。
+   说明：主题的党红渐变底（!important）对 link/text 主按钮同样生效，
+   因此这些变体也属于红底按钮，必须白字；仅排除 plain（浅底红字）与
+   危险色的 link/text 变体（红字透明底，不属于红底按钮）。
+   ============================================================ */
+.el-button--primary:not(.is-plain),
+.el-button--danger:not(.is-plain):not(.is-text):not(.is-link) {
+  --el-button-text-color: #ffffff;
+  --el-button-hover-text-color: #ffffff;
+  --el-button-active-text-color: #ffffff;
+  color: #ffffff;
+  font-weight: 500;
+}
+.el-button--primary:not(.is-plain):hover,
+.el-button--primary:not(.is-plain):active,
+.el-button--danger:not(.is-plain):not(.is-text):not(.is-link):hover,
+.el-button--danger:not(.is-plain):not(.is-text):not(.is-link):active {
+  color: #ffffff;
+}
+/* link / text 类型主按钮：补足内边距，呈现为规整的红底白字按钮 */
+.el-button--primary.is-link:not(.is-plain),
+.el-button--primary.is-text:not(.is-plain) {
+  padding: 6px 12px;
+  height: auto;
+}
+/* 字号与按钮尺寸匹配：大 16px / 默认 14px / 小 12px */
+.el-button--large.el-button--primary:not(.is-plain):not(.is-text):not(.is-link),
+.el-button--large.el-button--danger:not(.is-plain):not(.is-text):not(.is-link) {
+  font-size: 16px;
+}
+.el-button--small.el-button--primary:not(.is-plain):not(.is-text):not(.is-link),
+.el-button--small.el-button--danger:not(.is-plain):not(.is-text):not(.is-link) {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* 输入框聚焦：金红边 */
+.el-input__wrapper {
+  border-radius: var(--ps-radius) !important;
+  transition: box-shadow 0.25s ease !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--ps-red) inset, 0 0 0 4px rgba(201, 169, 97, 0.16) !important;
+}
+
+/* 表格 */
+.el-table {
+  --el-table-border-color: var(--ps-line-soft);
+  --el-table-header-bg-color: #faf3e8;
+  --el-table-row-hover-bg-color: var(--ps-red-soft);
+  border-radius: var(--ps-radius) !important;
+  overflow: hidden;
+}
+.el-table th.el-table__cell {
+  font-family: var(--ps-font-serif);
+  font-weight: 600;
+  color: var(--ps-ink) !important;
+  letter-spacing: 0.5px;
+}
+
+/* 分页 */
+.el-pagination.is-background .el-pager li.is-active {
+  background: var(--ps-red) !important;
+}
+
+/* 标签 */
+.el-tag {
+  border-radius: 6px !important;
+}

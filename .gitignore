@@ -1,0 +1,77 @@
+# 依赖与构建产物
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+**/.vite/
+**/.vite-*/
+*.tsbuildinfo
+
+# 本地数据库文件（切到 MySQL 后不再需要）
+*.db
+*.db-journal
+packages/server/prisma/dev.db
+packages/server/prisma/dev.db-journal
+
+# 构建产物 - 前端静态文件（部署时由构建生成）
+packages/server/public/
+
+# Vite 临时配置缓存（含机器绝对路径，禁止打包/提交）
+*.timestamp-*.mjs
+*.timestamp-*.mjs.map
+
+# Vite 配置编译产物（vite.config.ts 编译时生成，含机器路径，禁止提交）
+packages/admin/vite.config.js
+packages/admin/vite.config.d.ts
+packages/mobile/vite.config.js
+packages/mobile/vite.config.d.ts
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 环境变量（含敏感信息）
+.env
+.env.local
+.env.*.local
+packages/server/.env
+# 生产环境凭据只保存在部署平台环境变量中；使用 .env.example 作为模板
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 上传的文件
+packages/server/uploads/*
+!packages/server/uploads/.gitkeep
+
+# Trae / 临时
+.trae/
+.trae/documents/
+
+# WorkBuddy / Agent 工作目录
+.workbuddy/
+
+# 临时文件
+_tmp_*
+~$*.docx
+~$*.xlsx
+c/Users/
+
+# 嵌套克隆的目标仓库（仅用于读取 README，不应提交）
+A08-AI-Party-School-Learning-System/
+
+# 本机缓存、打包产物与演示导出文件
+.pnpm-store/
+release/
+outputs/

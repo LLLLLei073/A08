@@ -1,0 +1,27 @@
+{
+  "name": "@ai-party-school/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node -e \"require('fs').writeFileSync('dist/esm/package.json', JSON.stringify({ type: 'module' }))\"",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.4",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

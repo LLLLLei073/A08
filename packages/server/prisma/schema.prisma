@@ -1,0 +1,550 @@
+// Prisma Schema - 基于 AI 的数智党校学习系统（SQLite 本地开发环境）
+// 本地开发用 SQLite；生产部署到阿里云 MySQL 时，用 schema.mysql.prisma 覆盖此文件
+//   copy /Y packages\server\prisma\schema.mysql.prisma packages\server\prisma\schema.prisma
+// 兼容性：无 enum、无 Json、无 @db 注解，全部用 String 表示，应用层做 JSON 解析
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ===== 组织架构 =====
+model Org {
+  id        Int      @id @default(autoincrement())
+  name      String
+  parentId  Int?
+  parent    Org?     @relation("OrgTree", fields: [parentId], references: [id])
+  children  Org[]    @relation("OrgTree")
+  level     Int      @default(1) // 1=党委/总支, 2=支部
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users                User[]
+  tasks                LearningTask[]
+  quizzes              Quiz[]
+  groups               ChatGroup[]
+  learningEvents       LearningEvent[]
+  analyticsQueryAudits AnalyticsQueryAudit[]
+  engagementRisks      EngagementRiskSnapshot[]
+
+  @@index([parentId])
+}
+
+// ===== 用户 =====
+model User {
+  id                  Int      @id @default(autoincrement())
+  username            String   @unique
+  password            String
+  name                String
+  phone               String?
+  orgId               Int
+  org                 Org      @relation(fields: [orgId], references: [id])
+  role                String   @default("MEMBER") // ADMIN / SECRETARY / MEMBER
+  forceChangePassword Boolean  @default(true) // 首次登录/重置密码后必须修改密码
+  securityVersion     Int      @default(0) // 角色、组织或密码变更时自增，使旧会话失效
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  records               LearningRecord[]
+  dailyStats            LearningDailyStat[]
+  quizRecords           QuizRecord[]
+  wrongQuestions        WrongQuestion[]
+  aiReports             AiReport[]
+  knowledgeStates       UserKnowledgeState[]
+  learningEvents        LearningEvent[]
+  learningPathSnapshots LearningPathSnapshot[]
+  analyticsQueryAudits  AnalyticsQueryAudit[]
+  engagementRisk        EngagementRiskSnapshot?
+
+  ownedGroups       ChatGroup[]             @relation("GroupOwner")
+  chatMemberships   ChatMember[]
+  chatMessages      ChatMessage[]
+  sentNotifications Notification[]          @relation("NotificationSender")
+  notifications     NotificationRecipient[]
+
+  @@index([orgId])
+  @@index([role])
+}
+
+// ===== 学习内容 =====
+model Content {
+  id        Int      @id @default(autoincrement())
+  title     String
+  type      String // ARTICLE / VIDEO
+  body      String?
+  mediaUrl  String?
+  cover     String?
+  category  String
+  tags      String   @default("[]") // JSON 字符串
+  isPublic  Boolean  @default(false)
+  duration  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks             LearningTaskContent[]
+  records           LearningRecord[]
+  dailyStats        LearningDailyStat[]
+  knowledgeBindings ContentKnowledge[]
+  learningPathItems LearningPathItem[]
+
+  @@index([category])
+  @@index([isPublic])
+}
+
+// ===== 学习任务 =====
+model LearningTask {
+  id                 Int      @id @default(autoincrement())
+  orgId              Int
+  org                Org      @relation(fields: [orgId], references: [id])
+  title              String
+  deadline           DateTime
+  participantUserIds String   @default("[]") // JSON 字符串数组，空数组=支部全部成员
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  contents LearningTaskContent[]
+
+  @@index([orgId])
+}
+
+model LearningTaskContent {
+  taskId    Int
+  contentId Int
+  task      LearningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  content   Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, contentId])
+}
+
+// ===== 学习记录 =====
+model LearningRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId Int
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  duration  Int      @default(0)
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, contentId])
+  @@index([userId])
+  @@index([contentId])
+}
+
+// 服务端按可信增量记录的每日学习时长，用于趋势和周期统计。
+model LearningDailyStat {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId Int
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  day       DateTime
+  duration  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, contentId, day])
+  @@index([userId, day])
+  @@index([day])
+}
+
+// ===== 题库 =====
+model Question {
+  id        Int      @id @default(autoincrement())
+  type      String // SINGLE / MULTIPLE / JUDGE
+  stem      String
+  options   String // JSON 字符串
+  answer    String
+  analysis  String?
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  papers            PaperQuestion[]
+  wrongRecords      WrongQuestion[]
+  knowledgeBindings QuestionKnowledge[]
+
+  @@index([category])
+  @@index([type])
+}
+
+// ===== 试卷 =====
+model Paper {
+  id         Int      @id @default(autoincrement())
+  title      String
+  totalScore Int
+  passScore  Int
+  duration   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  questions PaperQuestion[]
+  quizzes   Quiz[]
+}
+
+model PaperQuestion {
+  paperId    Int
+  questionId Int
+  score      Int
+  sort       Int      @default(0)
+  paper      Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([paperId, questionId])
+  @@index([questionId])
+}
+
+// ===== 测验/考试 =====
+model Quiz {
+  id                 Int      @id @default(autoincrement())
+  paperId            Int
+  paper              Paper    @relation(fields: [paperId], references: [id])
+  orgId              Int
+  org                Org      @relation(fields: [orgId], references: [id])
+  type               String   @default("PRACTICE") // PRACTICE / EXAM
+  startTime          DateTime
+  endTime            DateTime
+  duration           Int
+  participantUserIds String   @default("[]") // JSON 字符串数组，空数组=支部全部成员
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  records QuizRecord[]
+
+  @@index([paperId])
+  @@index([orgId])
+  @@index([type])
+}
+
+model QuizRecord {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId     Int
+  quiz       Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers    String // JSON 字符串
+  score      Int?
+  passed     Boolean?
+  startTime  DateTime  @default(now())
+  submitTime DateTime?
+
+  @@unique([userId, quizId])
+  @@index([userId])
+  @@index([quizId])
+}
+
+// ===== 错题 =====
+model WrongQuestion {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  wrongCount Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, questionId])
+  @@index([userId])
+}
+
+// ===== AI 评价报告 =====
+// 报告不再由学习端主动生成，统一由管理端（手动或定时）生成后下发。
+model AiReport {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score       Int
+  comment     String
+  strengths   String    @default("[]") // JSON 字符串
+  weaknesses  String    @default("[]") // JSON 字符串
+  suggestions String    @default("[]") // JSON 字符串
+  dimensions  String // JSON 字符串
+  // 统计周期起点（历史字段名沿用 weekStart，实际语义为 periodStart）
+  weekStart   DateTime
+  periodEnd   DateTime?
+  periodType  String    @default("WEEKLY") // DAILY / WEEKLY / MONTHLY / QUARTERLY
+  // 生成来源：MANUAL=管理端手动生成，AUTO=定时任务生成
+  source      String    @default("MANUAL")
+  // 下发时间；为空表示尚未下发，学习端不可见
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, weekStart, periodType])
+  @@index([userId])
+  @@index([publishedAt])
+}
+
+// ===== 群聊 =====
+// type：ORG=支部群（本支部成员自动加入）/ MANAGE=书记与管理员工作群（自动加入）/ CUSTOM=自建小组群
+model ChatGroup {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   @default("CUSTOM")
+  orgId     Int? // ORG 群关联的支部
+  org       Org?     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ownerId   Int? // 群主；系统群可为空
+  owner     User?    @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  notice    String? // 群公告
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  ChatMember[]
+  messages ChatMessage[]
+
+  @@index([type])
+  @@index([orgId])
+}
+
+model ChatMember {
+  id                Int       @id @default(autoincrement())
+  groupId           Int
+  group             ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // OWNER / ADMIN / MEMBER（群内身份，与系统角色无关）
+  groupRole         String    @default("MEMBER")
+  lastReadMessageId Int       @default(0)
+  clearedMessageId  Int       @default(0) // 当前成员已清空到的消息，仅影响本人视图
+  muted             Boolean   @default(false)
+  joinedAt          DateTime  @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        Int       @id @default(autoincrement())
+  groupId   Int
+  group     ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  senderId  Int? // 为空表示系统消息
+  sender    User?     @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  // TEXT / IMAGE / SYSTEM / NOTICE(通知同步) / REPORT(AI 报告下发)
+  type      String    @default("TEXT")
+  content   String
+  extra     String? // JSON：如 {"notificationId":1} / {"reportId":2}
+  recalled  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([groupId, id])
+  @@index([senderId])
+}
+
+// ===== 消息通知（群聊下的子功能）=====
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  // ANNOUNCE=公告 / REPORT=AI 报告 / TASK / QUIZ / SYSTEM
+  type      String   @default("ANNOUNCE")
+  // NORMAL / IMPORTANT / URGENT
+  level     String   @default("NORMAL")
+  senderId  Int?
+  sender    User?    @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  // ALL=全体 / ORG=指定支部 / USER=指定人员
+  scope     String   @default("ORG")
+  orgIds    String   @default("[]") // JSON 数组
+  userIds   String   @default("[]") // JSON 数组
+  refId     Int? // 关联业务主键，如 aiReportId
+  groupId   Int? // 同步推送到的群聊
+  createdAt DateTime @default(now())
+
+  recipients NotificationRecipient[]
+
+  @@index([type])
+  @@index([senderId])
+}
+
+model NotificationRecipient {
+  id             Int          @id @default(autoincrement())
+  notificationId Int
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, isRead])
+}
+
+// ===== 系统设置（键值对，用于后台动态配置，如 AI 模型参数）=====
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ===== 自适应学习：知识图谱与 BKT =====
+model KnowledgeNode {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  description String?
+  category    String
+  difficulty  Int      @default(1)
+  pInit       Float    @default(0.2)
+  pLearn      Float    @default(0.15)
+  pSlip       Float    @default(0.1)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  outgoingEdges KnowledgeEdge[]      @relation("KnowledgeEdgeFrom")
+  incomingEdges KnowledgeEdge[]      @relation("KnowledgeEdgeTo")
+  contents      ContentKnowledge[]
+  questions     QuestionKnowledge[]
+  userStates    UserKnowledgeState[]
+  pathItems     LearningPathItem[]
+
+  @@index([category])
+  @@index([active])
+}
+
+model KnowledgeEdge {
+  id         Int           @id @default(autoincrement())
+  fromNodeId Int
+  toNodeId   Int
+  type       String        @default("PREREQUISITE")
+  weight     Float         @default(1)
+  createdAt  DateTime      @default(now())
+  fromNode   KnowledgeNode @relation("KnowledgeEdgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode     KnowledgeNode @relation("KnowledgeEdgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([fromNodeId, toNodeId, type])
+  @@index([toNodeId])
+}
+
+model ContentKnowledge {
+  contentId  Int
+  nodeId     Int
+  weight     Float         @default(1)
+  difficulty Int           @default(1)
+  content    Content       @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  node       KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, nodeId])
+  @@index([nodeId])
+}
+
+model QuestionKnowledge {
+  questionId Int
+  nodeId     Int
+  weight     Float         @default(1)
+  difficulty Int           @default(1)
+  question   Question      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  node       KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, nodeId])
+  @@index([nodeId])
+}
+
+model UserKnowledgeState {
+  id               Int           @id @default(autoincrement())
+  userId           Int
+  nodeId           Int
+  mastery          Float         @default(0.2)
+  attempts         Int           @default(0)
+  correctCount     Int           @default(0)
+  lastEvidenceAt   DateTime?
+  algorithmVersion String        @default("bkt-v1")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  node             KnowledgeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, nodeId])
+  @@index([userId, mastery])
+}
+
+model LearningEvent {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  orgId           Int
+  eventType       String
+  subjectType     String
+  subjectId       Int
+  sourceKey       String    @unique
+  payload         String    @default("{}")
+  occurredAt      DateTime  @default(now())
+  processedAt     DateTime?
+  processingError String?
+  retryCount      Int       @default(0)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([userId, processedAt])
+  @@index([processedAt, retryCount])
+}
+
+model LearningPathSnapshot {
+  id               Int                @id @default(autoincrement())
+  userId           Int
+  algorithmVersion String             @default("graph-bkt-v1")
+  graphVersion     Int                @default(1)
+  context          String             @default("{}")
+  generatedAt      DateTime           @default(now())
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            LearningPathItem[]
+
+  @@index([userId, generatedAt])
+}
+
+model LearningPathItem {
+  id         Int                  @id @default(autoincrement())
+  snapshotId Int
+  nodeId     Int?
+  contentId  Int
+  rank       Int
+  score      Float
+  reason     String
+  breakdown  String               @default("{}")
+  status     String               @default("PENDING")
+  snapshot   LearningPathSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  node       KnowledgeNode?       @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  content    Content              @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, rank])
+  @@index([nodeId])
+  @@index([contentId])
+}
+
+model AnalyticsQueryAudit {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int
+  orgId        Int
+  questionHash String
+  queryPlan    String
+  resultCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+  actor        User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  org          Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId, createdAt])
+  @@index([orgId, createdAt])
+}
+
+model EngagementRiskSnapshot {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  orgId          Int
+  score          Int
+  level          String
+  factors        String    @default("[]")
+  ruleVersion    String    @default("engagement-rules-v1")
+  evaluatedAt    DateTime  @default(now())
+  lastNotifiedAt DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org            Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, score])
+}
